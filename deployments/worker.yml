@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-k8s-deployment-worker
+  namespace: laravel-k8s-prod
+  labels:
+    app: laravel-k8s-prod
+    env: prod
+    type: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel-k8s-prod
+      env: prod
+      type: worker
+
+  template:
+    metadata:
+      labels:
+        app: laravel-k8s-prod
+        env: prod
+        type: worker
+    spec:
+
+      containers:
+      # App container
+      - name: worker
+        image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
+        envFrom:
+        - configMapRef:
+            name: app-config-map
+        - secretRef:
+            name: app-secrets
+        ports:
+        - containerPort: 9000
+        command:
+        - php
+        args:
+        - artisan
+        - horizon
+
+      imagePullSecrets:
+      - name: ghcr-secret

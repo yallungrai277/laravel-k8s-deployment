@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-k8s-deployment-app
+  namespace: laravel-k8s-prod # This should exist beforehand.
+  labels:
+    app: laravel-k8s-prod
+    env: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel-k8s-prod
+      env: prod
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: laravel-k8s-prod
+        env: prod
+    spec:
+      initContainers:
+      # Init containers are exactly like regular containers, except:
+      # - Init containers always run to completion.
+      # - Each init container must complete successfully before the next one starts.
+      # - Regular container does not start until init container finishes.
+      # Maybe add a bash script such as post-deploy.sh to further ease out this abd below process.
+      - name: deploy
+        # Can also use busybox image.
+        image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
+        imagePullPolicy: IfNotPresent
+        command: ["sh", "-c", "cd /var/www/html && chmod +x ./scripts/post_deploy.sh && ./scripts/post_deploy.sh"]
+        # Alternative way of defining command.
+        # command:
+        # - php
+        # args:
+        # - artisan
+        # - migrate
+        # - --force
+        envFrom:
+        - configMapRef:
+            name: app-config-map
+        - secretRef:
+            name: app-secrets
+        volumeMounts:
+        - name: app-volume
+          mountPath: /var/www/html/storage
+
+      containers:
+      # App container
+      - name: app
+        image: ghcr.io/yallungrai277/laravel-k8s-app:latest
+
+        envFrom:
+        - configMapRef:
+            name: app-config-map
+        - secretRef:
+            name: app-secrets
+        # Shorter syntax above. We can also do below but longer syntax and one by one.
+        # env:
+        # - name: DB_HOST
+        #   valueFrom:
+        #     configMapKeyRef:
+        #       name: app-config-map
+        #       key: DB_HOST
+
+        volumeMounts:
+        # App volume such as logs, cache etc...
+        - name: app-volume
+          mountPath: /var/www/html/storage
+
+        ports:
+        - containerPort: 9000
+        imagePullPolicy: IfNotPresent
+
+      # Web container
+      - name: nginx
+        image: ghcr.io/yallungrai277/laravel-k8s-nginx:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        # Static assets required by nginx to serve images.
+        - name: app-volume
+          mountPath: /var/www/html/public/storage
+          subPath: app/public # Sub path is the path inside volume, we want to mount from app/public volume subpath on above container mount path.
+
+      imagePullSecrets:
+      - name: ghcr-secret
+
+      volumes:
+      # App volume such as logs, cache, assets etc...
+      - name: app-volume
+        persistentVolumeClaim:
+          claimName: app-pvc-prod
+
+---
+# Service used to expose app outside cluster, not a recommended way of doing
+# but here for testing. Should use ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-k8s-service
+  namespace: laravel-k8s-prod # This should exist beforehand.
+spec:
+  selector:
+    app: laravel-k8s-prod
+    env: prod
+  type: NodePort
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 30000

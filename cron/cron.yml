@@ -1,0 +1,32 @@
+# Each time a cron job runs a new pod is created and then status is set to either 
+# failed or completed. K8s then keeps history of 3 completed jobs and 1 failed job.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: laravel-k8s-cron
+  namespace: laravel-k8s-prod
+  labels:
+    app: laravel-k8s-prod
+    env: prod
+    type: cron
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: cron-scheduler
+            image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
+            envFrom:
+            - configMapRef:
+                name: app-config-map
+            - secretRef:
+                name: app-secrets
+            ports:
+            - containerPort: 9000
+            command: ["/bin/sh", "-c"]
+            args: ["php artisan schedule:run"]
+          restartPolicy: OnFailure
+          imagePullSecrets:
+          - name: ghcr-secret

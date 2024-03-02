@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: laravel-k8s-redis
+  namespace: laravel-k8s-prod
+  labels:
+    app: laravel-k8s-prod
+    env: prod
+    type: redis
+spec:
+  serviceName: redis-headless-prod
+  selector:
+    matchLabels:
+      app: laravel-k8s-prod
+      env: prod
+      type: redis
+  template:
+    metadata:
+      labels:
+        app: laravel-k8s-prod
+        env: prod
+        type: redis
+
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.0.20-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6379
+
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc-prod
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless-prod
+  namespace: laravel-k8s-prod
+spec:
+  selector:
+    app: laravel-k8s-prod
+    env: prod
+    type: redis
+  ports:
+  - port: 6379
+    protocol: TCP
+    targetPort: 6379
+  clusterIP: None
