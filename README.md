@@ -1,5 +1,9 @@
 ### Deployment guides to kubernetes, using minikube here.
 
+This is a a minikube deployment for this app. `https://github.com/yallungrai277/laravel-k8s`.
+
+## Instructions
+
 This deployment assumes that you are running from current root. Note to debug you can visit the logs via `kubectl logs [podname]` or even better
 view the events logged by pod, pvc etc using `kubectl describe [pod or pvc or deployment etc...] [name] --namespace=[namespace]`
 
