@@ -5,6 +5,9 @@ metadata:
   namespace: laravel-k8s-prod
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    # This is setting client_max_body_size: 100M on the nginx-ingress controller itself. 
+    # Somehow this needs to be set here even if already defined on default.conf template file on nginx.
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
 spec:
   rules:
   # Host can be set in /etc/host on the host machine.
