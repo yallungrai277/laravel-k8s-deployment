@@ -27,6 +27,7 @@ spec:
       # App container
       - name: worker
         image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
+        imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
             name: app-config-map

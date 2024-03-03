@@ -18,6 +18,7 @@ spec:
           containers:
           - name: cron-scheduler
             image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
+            imagePullPolicy: IfNotPresent
             envFrom:
             - configMapRef:
                 name: app-config-map

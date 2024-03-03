@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: laravel-k8s-redis
+  name: redis
   namespace: laravel-k8s-prod
   labels:
     app: laravel-k8s-redis
