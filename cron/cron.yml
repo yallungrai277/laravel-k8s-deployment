@@ -3,10 +3,10 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: laravel-k8s-cron
+  name: app-cron
   namespace: laravel-k8s-prod
   labels:
-    app: laravel-k8s-prod
+    app: laravel-k8s-cron
     env: prod
     type: cron
 spec:

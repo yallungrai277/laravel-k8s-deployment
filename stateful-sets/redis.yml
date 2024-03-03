@@ -4,20 +4,20 @@ metadata:
   name: laravel-k8s-redis
   namespace: laravel-k8s-prod
   labels:
-    app: laravel-k8s-prod
+    app: laravel-k8s-redis
     env: prod
     type: redis
 spec:
   serviceName: redis-headless-prod
   selector:
     matchLabels:
-      app: laravel-k8s-prod
+      app: laravel-k8s-redis
       env: prod
       type: redis
   template:
     metadata:
       labels:
-        app: laravel-k8s-prod
+        app: laravel-k8s-redis
         env: prod
         type: redis
 
@@ -47,7 +47,7 @@ metadata:
   namespace: laravel-k8s-prod
 spec:
   selector:
-    app: laravel-k8s-prod
+    app: laravel-k8s-redis
     env: prod
     type: redis
   ports:

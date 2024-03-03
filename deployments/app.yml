@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: laravel-k8s-deployment-app
-  namespace: laravel-k8s-prod # This should exist beforehand.
+  name: app-deployment
+  namespace: laravel-k8s-prod
   labels:
-    app: laravel-k8s-prod
+    app: laravel-k8s-app
     env: prod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: laravel-k8s-prod
+      app: laravel-k8s-app
       env: prod
   strategy:
     rollingUpdate:
@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       labels:
-        app: laravel-k8s-prod
+        app: laravel-k8s-app
         env: prod
     spec:
       initContainers:
@@ -28,7 +28,6 @@ spec:
       # - Init containers always run to completion.
       # - Each init container must complete successfully before the next one starts.
       # - Regular container does not start until init container finishes.
-      # Maybe add a bash script such as post-deploy.sh to further ease out this abd below process.
       - name: deploy
         # Can also use busybox image.
         image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
@@ -104,11 +103,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: laravel-k8s-service
-  namespace: laravel-k8s-prod # This should exist beforehand.
+  name: app-service
+  namespace: laravel-k8s-prod
 spec:
   selector:
-    app: laravel-k8s-prod
+    app: laravel-k8s-app
     env: prod
   type: NodePort
   ports:

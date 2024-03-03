@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: laravel-k8s-mysql
+  name: mysql
   namespace: laravel-k8s-prod
   labels:
-    app: laravel-k8s-prod
+    app: laravel-k8s-mysql
     env: prod
     type: database
 spec:
   selector:
     matchLabels:
-      app: laravel-k8s-prod
+      app: laravel-k8s-mysql
       env: prod
       type: database
   serviceName: mysql-headless-prod
   template:
     metadata:
       labels:
-        app: laravel-k8s-prod
+        app: laravel-k8s-mysql
         env: prod
         type: database
     spec:
@@ -70,7 +70,7 @@ metadata:
   namespace: laravel-k8s-prod
 spec:
   selector:
-    app: laravel-k8s-prod
+    app: laravel-k8s-mysql
     env: prod
     type: database
   ports:

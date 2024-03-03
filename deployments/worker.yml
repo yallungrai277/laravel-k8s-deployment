@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: laravel-k8s-deployment-worker
+  name: worker-deployment
   namespace: laravel-k8s-prod
   labels:
-    app: laravel-k8s-prod
+    app: laravel-k8s-worker
     env: prod
     type: worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: laravel-k8s-prod
+      app: laravel-k8s-worker
       env: prod
       type: worker
 
   template:
     metadata:
       labels:
-        app: laravel-k8s-prod
+        app: laravel-k8s-worker
         env: prod
         type: worker
     spec:
