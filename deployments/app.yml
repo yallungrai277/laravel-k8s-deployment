@@ -23,23 +23,26 @@ spec:
         app: laravel-k8s-app
         env: prod
     spec:
-      initContainers:
       # Init containers are exactly like regular containers, except:
       # - Init containers always run to completion.
       # - Each init container must complete successfully before the next one starts.
       # - Regular container does not start until init container finishes.
+      initContainers:
       - name: deploy
-        # Can also use busybox image.
         image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
         imagePullPolicy: IfNotPresent
-        command: ["sh", "-c", "cd /var/www/html && chmod +x ./scripts/post_deploy.sh && ./scripts/post_deploy.sh"]
-        # Alternative way of defining command.
-        # command:
-        # - php
-        # args:
-        # - artisan
-        # - migrate
-        # - --force
+        command:
+        - /bin/sh
+        - -c
+        # On kuberenetes context, When using PV and PVC, it overrides the container file system permissions and removes folder. 
+        # Hence, we create folders and set those permissions here.        
+        - |
+          mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && \
+          chown -R www-data:www-data /var/www/html/storage && \
+          chmod -R 777 /var/www/html/storage && \
+          cd /var/www/html && \
+          chmod +x ./scripts/post_deploy.sh && \
+          ./scripts/post_deploy.sh
         envFrom:
         - configMapRef:
             name: app-config-map
@@ -53,7 +56,6 @@ spec:
       # App container
       - name: app
         image: ghcr.io/yallungrai277/laravel-k8s-app:latest
-
         envFrom:
         - configMapRef:
             name: app-config-map
@@ -71,10 +73,13 @@ spec:
         # App volume such as logs, cache etc...
         - name: app-volume
           mountPath: /var/www/html/storage
-
         ports:
         - containerPort: 9000
         imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
 
       # Web container
       - name: nginx
@@ -86,11 +91,14 @@ spec:
         # Static assets required by nginx to serve images.
         - name: app-volume
           mountPath: /var/www/html/public/storage
-          subPath: app/public # Sub path is the path inside volume, we want to mount from app/public volume subpath on above container mount path.
+          subPath: app/public # Sub path is the path inside app-volume, we want to mount from app/public volume subpath on above container mount path.
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
 
       imagePullSecrets:
       - name: ghcr-secret
-
       volumes:
       # App volume such as logs, cache, assets etc...
       - name: app-volume
@@ -99,7 +107,7 @@ spec:
 
 ---
 # Service used to expose app outside cluster, not a recommended way of doing
-# but here for testing. Should use ingress.
+# but here for testing. Ingress is also used refer to README.md
 apiVersion: v1
 kind: Service
 metadata:
