@@ -33,7 +33,7 @@ Or one liner: `chmod +x ./build.sh && ./build.sh`. Please also see notes on the 
 
 1. Get the url for the app `minikube service app-service --namespace=laravel-k8s-prod --url=true` or `kubectl port-forward service/[nginx_web_server_service_name] 8080:80` if not on minikube.
 
-Note: Above steps should be configured.
+Note: App should be running.
 
 # Accessing app via load balancer
 
@@ -44,7 +44,7 @@ will automatically expose the specified port on k8s. Not recommended, approach t
 1. Apply load balancer for local testing `kubectl apply -f loadbalancer/load-balancer.yml`.
 2. `minikube service app-loadbalancer --namespace=laravel-k8s-prod`
 
-Note: Above steps should be configured.
+Note: App should be running.
 
 # Accessing app via ingress
 
@@ -56,6 +56,8 @@ You must have an Ingress controller to satisfy an Ingress. Only creating an Ingr
 4. Get the minikube ip by running `minikube ip` and add it to `/etc/hosts` file with the host name like this: `_minikube_ laravel-k8s.test`. You can also add other hostname if you like but it should match with the host name defined in `loadbalancer/ingress.yml`
 5. Now apply ingress `kubectl apply -f loadbalancer/ingress.yml`. App should be available under host name `laravel-k8s.test`.
 
+Note: App should be running.
+
 # Autoscale using inbuilt metrics
 
 1. First enable metrics server on minikube `minikube addons enable metrics-server`. Please note that enabling metrics server may take some time so, you need to check whethe metric server container is running or not continously by `kubectl get pods -n kube-system` on kube-system namespace.
@@ -64,6 +66,8 @@ You must have an Ingress controller to satisfy an Ingress. Only creating an Ingr
 4. Check properly configured `kubectl get hpa`. The section should have targets set like `0%/20%`. You can also see events `kubectl describe hpa app-hpa-cpu`.
 5. Now, install a load testing tool such as `seige` or `hey` using homebrew if on mac or any other tool for other OS.
 6. Send many concurrent requests in order to try and break the system while simulatenously running `kubectl get pods --watch` and `kubectl get hpa` (If using hey just do `hey -n 1000 http://laravel-k8s.test`). The pods and deployment should increase in real time after some time. This is because we exceeded the cpu usage in hpa hence, triggering the HPA to autoscale.
+
+Note: App should be running.
 
 # Autoscale using custom metrics
 
