@@ -9,6 +9,12 @@ metadata:
     # Somehow this needs to be set here even if already defined on default.conf template file on nginx.
     nginx.ingress.kubernetes.io/proxy-body-size: 100m
 spec:
+  tls:
+  # Assuming that you have a secret configured in the cluster named larvel-k8s-tls with appropriate
+  # contents. See SSL / TLS section in README.md
+  - secretName: laravel-k8s-tls
+    hosts:
+    - laravel-k8s.test
   rules:
   # Host can be set in /etc/host on the host machine.
   - host: laravel-k8s.test

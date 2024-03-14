@@ -9,8 +9,8 @@ data:
   # Set app_debug to true and app_env to production only if you are running on https, because simply turning these values to production will affect laravel signed urls
   # and it will not work, because under the hood laravel will sign the url forcing https scheme checking these values even if you are running on http.
   # Hence, the signature and the url will not match.
-  APP_DEBUG: "true"
-  APP_ENV: local
+  APP_DEBUG: "false"
+  APP_ENV: production
   APP_URL: http://laravel-k8s.test
   DB_HOST: mysql-headless-prod
   DB_CONNECTION: mysql

@@ -48,7 +48,7 @@ Note: App should be running.
 
 # Accessing app via ingress
 
-You must have an Ingress controller to satisfy an Ingress. Only creating an Ingress resource has no effect. We are using ingress nginx controller here.
+You must have an Ingress controller to satisfy an Ingress. Only creating an Ingress resource has no effect. We are using ingress nginx controller here. Also before applying `ingresss.yml`, also comment out tls section of `ingress.yml` if you dont want https. To make https work, please complete SSL / TLS section and then, apply ingress.
 
 1. First delete the load balancer `kubectl delete service app-loadbalancer` if configured.
 2. Enable nginx ingress controller on minikube `minikube addons enable ingress`. If you are running k8s outside of minikube then you need to install the nginx ingress controller manually.
@@ -91,6 +91,14 @@ Install linked.
 1. [https://linkerd.io/2.15/getting-started/] (May take a while to install, please note that all linkerd components are installed in linked namespace)
 2. Now inject proxy to a deployment [https://linkerd.io/2.15/features/proxy-injection/] using command `kubectl get deployment app-deployment -o yaml | linkerd inject - | kubectl apply -f -`
 3.
+
+# SSL / TLS
+
+If you want https locally then you can use open ssl. Let's encrypt will not work since, it requires a domain name publicly available over the internet and does domain validation. So, locally we use open ssl.
+
+1. Create a self signed cert `openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=laravel-k8s.test" -days 365`
+2. Now we need to, create a k8s secret file to store the certs. We can do that by using the certs that we just created in step. `kubectl create secret tls laravel-k8s-tls --cert=tls.crt --key=tls.key -n laravel-k8s-prod` creates secret in laravel-k8s-prod namespace. You can also use a yml file but need to base64 encode the contents of `.crt` and `.key` much easier this way in a single cmd. You need to rotate and create a new secret once the cert expires after 365 days since the day of creation. To view the secret run `kubectl get secret laravel-k8s-tls -o yaml`.
+3. Now run `kubectl apply -f loadbalancer/ingress.yml`
 
 # Todo
 
