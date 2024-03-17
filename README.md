@@ -58,6 +58,15 @@ You must have an Ingress controller to satisfy an Ingress. Only creating an Ingr
 
 Note: App should be running.
 
+# SSL / TLS
+
+If you want https locally then you can use open ssl. Let's encrypt will not work since, it requires a domain name publicly available over the internet and does domain validation. So, locally we use open ssl.
+
+1. Create a self signed cert `openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=laravel-k8s.test" -days 365`
+2. Now we need to, create a k8s secret file to store the certs. We can do that by using the certs that we just created in step. `kubectl create secret tls laravel-k8s-tls --cert=tls.crt --key=tls.key -n laravel-k8s-prod` creates secret in laravel-k8s-prod namespace. You can also use a yml file but need to base64 encode the contents of `.crt` and `.key` much easier this way in a single cmd. You need to rotate and create a new secret once the cert expires after 365 days since the day of creation. To view the secret run `kubectl get secret laravel-k8s-tls -o yaml`.
+
+3. Now run `kubectl apply -f loadbalancer/ingress.yml`. Before applying ingress please enable ingress add on. See `accessing app via ingress` section.
+
 # Autoscale using inbuilt metrics
 
 1. First enable metrics server on minikube `minikube addons enable metrics-server`. Please note that enabling metrics server may take some time so, you need to check whethe metric server container is running or not continously by `kubectl get pods -n kube-system` on kube-system namespace.
@@ -71,41 +80,28 @@ Note: App should be running.
 
 # Autoscale using custom metrics
 
-We can obviously scale using k8s default out of the box metrics like cpu, ram usage etc..., But here we would want to autoscale based off custom metrics. Now in order to autoscale or perform other required operations based on custom metrics we should be able to provide that to k8s cluster HPA (HorizontalPodAutoscaler) and it should be understandable by it. The way we do this is
-via Prometheus. Now prometheus is an open-source monitoring and alerting toolkit designed especially for microservices and containers. Prometheus monitoring lets you run flexible queries and configure real-time notifications such as alert manager etc...
+We can obviously scale using k8s default out of the box metrics like cpu, ram usage etc..., But here we would want to autoscale based off custom metrics. Now in order to autoscale or perform other required operations based on custom metrics we should be able to provide that to k8s cluster HPA (HorizontalPodAutoscaler) and it should be understandable by it. The way we do this is via Prometheus. Now prometheus is an open-source monitoring and alerting toolkit designed especially for microservices and containers. Prometheus monitoring lets you run flexible queries and configure real-time notifications such as alert manager etc...
 
-Now, prometheus scraps or gets metrics out of the container/app by sending requests to `/metrics` endpoint. Mind you that this data should be understandable by prometheus itself. Many containers or services by default expose this endpoint with proemtheus understandable metrics data. But not every containers export these metrics. For instance if you want mysql, redis, mongo-db to expose metrics, there is no native `/metrics` endpoint and hence, prometheus cannot scrap metrics out of it. This is where exporter comes into play. Exporter is basically a deployment that pulls out metrics from required containers and converts them to prometheus understandable metrics and then exposes those metrics to proemtheus at `/metrics` endpoint which can then be scraped by promethues. In theory, in order to do that or create a exporter we would have to create a seperate deployment for exporter, create a service for that and then create a custom `CRD (Custom Resource Definition)` called Service monitor. But that has all been done previously and instead we can use a helm chart for that and just override any values we need based on our own manifests file. Note that before all of that we need to install prometheus then only exporters.
+Now, prometheus scraps or gets metrics out of the container/app by sending requests to `/metrics` endpoint. Mind you that this data should be understandable by prometheus itself. Many containers or services by default expose this endpoint with proemtheus understandable metrics data. But not every containers export these metrics. For instance if you want mysql, redis, mongo-db to expose metrics, there is no native `/metrics` endpoint and hence, prometheus cannot scrap metrics out of it. This is where exporter comes into play. Exporter is basically a deployment that pulls out metrics from required containers and converts them to prometheus understandable metrics and then exposes those metrics to proemtheus at `/metrics` endpoint which can then be scraped by promethues. In theory, in order to do that or create a exporter we would have to create a seperate deployment for exporter, create a service for that and then create a custom `CRD (Custom Resource Definition)` called Service monitor. But that has all been done previously and instead we can use a helm chart for those exporter and just override any values we need based on our own manifests file. Note that before all of that we need to install prometheus then only exporters.
 
-We can install prometheus via helm charts.
+Since we are not monitoring the mysql or redis instance, we are only monitoring our app. Hence, in order to do that we must somehow expose our `/metrics` endpoint via app and prometheus should listen to it. Now that has been done. So follow below steps.
+
+1. Install prometheus via helm chart
 
 (Base prometheus community helm chart.)[https://github.com/prometheus-community/helm-charts] (All charts are available here)
-(Kube prometheus stacj)[https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack]. Installs graffana, prometheus-operator and everything needed for prometheus stack. Using this monitoring stack is configured where worker nodes, k8s components are monitored out of the box for the k8s configuration of your cluster. These configuration are coming from configmaps and secrets. CRD (Custom resource definition) are also created.
+(Kube prometheus stack)[https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack]. Installs graffana, prometheus-operator and everything needed for prometheus stack. Using this monitoring stack is configured where worker nodes, k8s components are monitored out of the box for the k8s configuration of your cluster. These configuration are coming from configmaps and secrets. CRD (Custom resource definition) are also created.
 
-But today we will be doing that via `linkerd` which is a service mesh. A service mesh is a software layer that handles all communication between services in applications. This layer is composed of containerized microservices. Now, how this works is instead of adding exporters as mentioned above, we add a additional sidecar/helper container on our app deployment that is capable of proxying requests made in and out of the container and also expose custom metrics data from the desired container to prometheus. Note that, we should expose our app `/metrics` endpoint data to prometheus understandable format. And all of this is done via linkerd which is easy to do.
+2. Now verify that all prometheus container, crds and resources are running and simply apply the prometheus manifest file that will scrape our laravel app. `kubectl apply -f prometheus/app.yml`. This will create a servicemonitor and a prometheus container that will scrape metrics from our defined service monitor. To view those resources simply do `kubectl get servicemonitor` or `kubectl get prometheus`.
+
+3. Now port forward prometheus service and get access to prometheus UI. There under `Service Discovery` and `Targets` we should see our new `app-service-monitor`. We can also view the data it is pulling. THe metrics the app provides are `app_response_time` etc and prefixed with app. You can search for it in graphs section.
+
+We can also do this via service mesh which will create a sidecar container using linkerd [https://linkerd.io/2.15/getting-started/]. A service mesh is a software layer that handles all communication between services in applications. This layer is composed of containerized microservices. Now, how this works is instead of adding exporters as mentioned above, we add a additional sidecar/helper container on our app deployment that is capable of proxying requests made in and out of the container and also expose custom metrics data from the desired container to prometheus. Note that, we should expose our app `/metrics` endpoint data to prometheus understandable format. And all of this is done via linkerd which is easy to do.
 
 <!-- Note that the goal here is to autoscale laravel app via response time. We take advantage of the metrics exposed by the NGINX Ingress Controller because we cannot
-directly consume it unlike the default metrics provided by k8s such as cpu / memory usage. Hence, the metrics exposed by NGINX Ingress Controller are scraped by Prometheus and parsed via Prometheus Adapter. -->
-
-Install linked.
-
-1. [https://linkerd.io/2.15/getting-started/] (May take a while to install, please note that all linkerd components are installed in linked namespace)
-2. Now inject proxy to a deployment [https://linkerd.io/2.15/features/proxy-injection/] using command `kubectl get deployment app-deployment -o yaml | linkerd inject - | kubectl apply -f -`
-3.
-
-# SSL / TLS
-
-If you want https locally then you can use open ssl. Let's encrypt will not work since, it requires a domain name publicly available over the internet and does domain validation. So, locally we use open ssl.
-
-1. Create a self signed cert `openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=laravel-k8s.test" -days 365`
-2. Now we need to, create a k8s secret file to store the certs. We can do that by using the certs that we just created in step. `kubectl create secret tls laravel-k8s-tls --cert=tls.crt --key=tls.key -n laravel-k8s-prod` creates secret in laravel-k8s-prod namespace. You can also use a yml file but need to base64 encode the contents of `.crt` and `.key` much easier this way in a single cmd. You need to rotate and create a new secret once the cert expires after 365 days since the day of creation. To view the secret run `kubectl get secret laravel-k8s-tls -o yaml`.
-3. Now run `kubectl apply -f loadbalancer/ingress.yml`
+directly consume it unlike the default metrics provided by k8s such as cpu / memory usage. Hence, the metrics exposed by NGINX Ingress Controller are scraped by Prometheus and parsed via Prometheus Adapter that can be consumed by HPA. -->
 
 # Todo
 
 -   Research and know about best practices for storing k8s yaml config/manifests for different environments (staging, dev, prod) focusing on reusability.
--   Scale out pods to more than one and test it out if it works, and worker jobs, scheduler jobs does not run multiple times.
 -   Scale out redis and mysql to more than one.
 -   Research on multi nodes cluster.
--   Zero down time deployment, Highy available deployment /autoscaling
--   SSl certificates
--   Add a script for this minikube instructions process

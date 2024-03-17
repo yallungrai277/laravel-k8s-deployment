@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: app-service-monitor
+  labels:
+    servicemonitor: app-service-monitor
+    env: prod
+  namespace: laravel-k8s-prod
+spec:
+  selector:
+    # Since we are monitoring using Service monitor,
+    # This should match the service label of the service we are
+    # monitoring, in this case app service.
+    matchLabels:
+      app: laravel-k8s-app
+  endpoints:
+  - port: web # Service port name.
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: app-prometheus
+  namespace: laravel-k8s-prod
+spec:
+  # Important to check serviceaccount name, do kubectl get serviceaccount and verify it.
+  serviceAccountName: prometheus-kube-prometheus-prometheus
+  serviceMonitorSelector:
+    # Should match the above service monitor label.
+    matchLabels:
+      servicemonitor: app-service-monitor
+      env: prod
