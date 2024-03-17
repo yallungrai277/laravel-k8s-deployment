@@ -4,7 +4,7 @@ metadata:
   name: app-service-monitor
   labels:
     servicemonitor: app-service-monitor
-    env: prod
+    release: prometheus
   namespace: laravel-k8s-prod
 spec:
   selector:
@@ -13,6 +13,7 @@ spec:
     # monitoring, in this case app service.
     matchLabels:
       app: laravel-k8s-app
+      env: prod
   endpoints:
   - port: web # Service port name.
 
@@ -23,6 +24,8 @@ kind: Prometheus
 metadata:
   name: app-prometheus
   namespace: laravel-k8s-prod
+  labels:
+    release: prometheus
 spec:
   # Important to check serviceaccount name, do kubectl get serviceaccount and verify it.
   serviceAccountName: prometheus-kube-prometheus-prometheus
@@ -30,4 +33,4 @@ spec:
     # Should match the above service monitor label.
     matchLabels:
       servicemonitor: app-service-monitor
-      env: prod
+      release: prometheus

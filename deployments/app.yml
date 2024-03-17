@@ -115,6 +115,7 @@ metadata:
   namespace: laravel-k8s-prod
   labels:
     app: laravel-k8s-app
+    env: prod
 spec:
   selector:
     app: laravel-k8s-app
