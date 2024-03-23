@@ -27,7 +27,7 @@ metadata:
   labels:
     release: prometheus
 spec:
-  # Important to check serviceaccount name, do kubectl get serviceaccount and verify it.
+  # Important to check serviceaccount name, do kubectl get serviceaccount and verify it before applying manifests.
   serviceAccountName: prometheus-kube-prometheus-prometheus
   serviceMonitorSelector:
     # Should match the above service monitor label.

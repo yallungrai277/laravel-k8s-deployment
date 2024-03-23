@@ -84,7 +84,7 @@ We can obviously scale using k8s default out of the box metrics like cpu, ram us
 
 Now, prometheus scraps or gets metrics out of the container/app by sending requests to `/metrics` endpoint. Mind you that this data should be understandable by prometheus itself. Many containers or services by default expose this endpoint with proemtheus understandable metrics data. But not every containers export these metrics. For instance if you want mysql, redis, mongo-db to expose metrics, there is no native `/metrics` endpoint and hence, prometheus cannot scrap metrics out of it. This is where exporter comes into play. Exporter is basically a deployment that pulls out metrics from required containers and converts them to prometheus understandable metrics and then exposes those metrics to proemtheus at `/metrics` endpoint which can then be scraped by promethues. In theory, in order to do that or create a exporter we would have to create a seperate deployment for exporter, create a service for that and then create a custom `CRD (Custom Resource Definition)` called Service monitor. But that has all been done previously and instead we can use a helm chart for those exporter and just override any values we need based on our own manifests file. Note that before all of that we need to install prometheus then only exporters.
 
-Since we are not monitoring the mysql or redis instance, we are only monitoring our app. Hence, in order to do that we must somehow expose our `/metrics` endpoint via app and prometheus should listen to it. Now that has been done. So follow below steps.
+Since we are not monitoring the mysql or redis instance, we are only monitoring our app. Hence, in order to do that we must somehow expose our `/metrics` endpoint via app and prometheus should listen to it. The app has a prometheus `/metrics` endpoint already using this `https://spatie.be/docs/laravel-prometheus/v1/introduction`.
 
 1. Install prometheus via helm chart
 
@@ -93,15 +93,17 @@ Since we are not monitoring the mysql or redis instance, we are only monitoring 
 
 2. Now verify that all prometheus container, crds and resources are running and simply apply the prometheus manifest file that will scrape our laravel app. `kubectl apply -f prometheus/app.yml`. This will create a servicemonitor and a prometheus container that will scrape metrics from our defined service monitor. To view those resources simply do `kubectl get servicemonitor` or `kubectl get prometheus`.
 
-3. Now port forward prometheus service and get access to prometheus UI. There under `Service Discovery` and `Targets` we should see our new `app-service-monitor`. We can also view the data it is pulling. THe metrics the app provides are `app_response_time` etc and prefixed with app. You can search for it in graphs section.
+3. Now port forward prometheus service and get access to prometheus UI. There under `Service Discovery` and `Targets` we should see our new `app-service-monitor`. We can also view the data it is pulling. The metrics the app provides are `app_response_time` etc and prefixed with app. You can search for it in graphs section, provided whole cluster of app is runnning.
 
-We can also do this via service mesh which will create a sidecar container using linkerd [https://linkerd.io/2.15/getting-started/]. A service mesh is a software layer that handles all communication between services in applications. This layer is composed of containerized microservices. Now, how this works is instead of adding exporters as mentioned above, we add a additional sidecar/helper container on our app deployment that is capable of proxying requests made in and out of the container and also expose custom metrics data from the desired container to prometheus. Note that, we should expose our app `/metrics` endpoint data to prometheus understandable format. And all of this is done via linkerd which is easy to do.
+4. [Todo], Install prometheus adapter so that now those custom metrics pulled in by prometheus can be understandable by kubernetes itself and autoscale based on those metrics.
 
-<!-- Note that the goal here is to autoscale laravel app via response time. We take advantage of the metrics exposed by the NGINX Ingress Controller because we cannot
-directly consume it unlike the default metrics provided by k8s such as cpu / memory usage. Hence, the metrics exposed by NGINX Ingress Controller are scraped by Prometheus and parsed via Prometheus Adapter that can be consumed by HPA. -->
+Note: We can also do this via service mesh which will create a sidecar container using linkerd [https://linkerd.io/2.15/getting-started/]. A service mesh is a software layer that handles all communication between services in applications. This layer is composed of containerized microservices. Now, how this works is instead of adding exporters as mentioned above, we add a additional sidecar/helper container on our app deployment that is capable of proxying requests made in and out of the container and also expose custom metrics data from the desired container to prometheus. Note that, we should expose our app `/metrics` endpoint data to prometheus understandable format. And all of this is done via linkerd which is easy to do but we are using prometheus here.
 
 # Todo
 
 -   Research and know about best practices for storing k8s yaml config/manifests for different environments (staging, dev, prod) focusing on reusability.
 -   Scale out redis and mysql to more than one.
 -   Research on multi nodes cluster.
+-   Use helm chart for this.
+-   Install prometheus adapter so that now those custom metrics pulled in by prometheus can be understandable by kubernetes itself and autoscale based on those metrics.
+-   Flux CD
