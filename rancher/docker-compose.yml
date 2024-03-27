@@ -1,1 +1,24 @@
-# Rancher docker compose for single vps usage.
+# Rancher docker compose for single node usage where master and node is on the same server. We do this via docker.
+# Todo how to make ssl work, because we can't bind 80 and 443, this is going to be used by ingress and also even if using port 80
+# and 443 as mentioned by default rancher docs is giving ssl error.
+version: "3"
+
+services:
+  rancher:
+    image: rancher/rancher
+    container_name: rancher    
+    ports:
+      - 8080:80
+      - 8443:443
+    networks: 
+      - rancher
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - 'rancher:/var/lib/rancher'
+
+volumes:
+  rancher:
+
+networks:
+  rancher:
