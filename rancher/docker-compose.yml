@@ -11,14 +11,14 @@ services:
       - 8080:80
       - 8443:443
     networks: 
-      - rancher
+      - rancher-internal
     restart: unless-stopped
     privileged: true
     volumes:
-      - 'rancher:/var/lib/rancher'
+      - 'rancher-data:/var/lib/rancher'
 
 volumes:
-  rancher:
+  rancher-data:
 
 networks:
-  rancher:
+  rancher-internal:
