@@ -17,9 +17,3 @@ data:
   DB_PORT: "3306"
   REDIS_HOST: redis-headless-prod
   REDIS_PORT: "6379"
-  MAIL_MAILER: smtp
-  MAIL_HOST: sandbox.smtp.mailtrap.io
-  MAIL_PORT: "2525"
-  # Configure proper mail provider here.
-  MAIL_USERNAME: d0add9dc8f7a99
-  MAIL_PASSWORD: d37813786effe8
