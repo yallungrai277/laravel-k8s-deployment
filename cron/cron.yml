@@ -16,6 +16,8 @@ spec:
       template:
         spec:
           containers:
+          # Probably good idea to mount volumes here as well
+          # may be required for some cron jobs, but ok for now.
           - name: cron-scheduler
             image: ghcr.io/yallungrai277/laravel-k8s-cli:latest
             imagePullPolicy: IfNotPresent
