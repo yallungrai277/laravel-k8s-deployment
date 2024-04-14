@@ -99,7 +99,7 @@ Since we are not monitoring the mysql or redis instance, we are only monitoring 
 
 Note: We can also do this via service mesh which will create a sidecar container using linkerd [https://linkerd.io/2.15/getting-started/]. A service mesh is a software layer that handles all communication between services in applications. This layer is composed of containerized microservices. Now, how this works is instead of adding exporters as mentioned above, we add a additional sidecar/helper container on our app deployment that is capable of proxying requests made in and out of the container and also expose custom metrics data from the desired container to prometheus. Note that, we should expose our app `/metrics` endpoint data to prometheus understandable format. And all of this is done via linkerd which is easy to do but we are using prometheus here.
 
-# Deployment notest
+# Deployment notes
 
 Always restart the worker, cron job and app deployment wherever cli and app image is being used. Essential for horizon to get updated configs from env vars.
 
