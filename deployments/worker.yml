@@ -22,7 +22,8 @@ spec:
         env: prod
         type: worker
     spec:
-
+      # Probably good idea to mount volumes here as well
+      # may be required for some jobs, but ok for now.
       containers:
       # App container
       - name: worker
