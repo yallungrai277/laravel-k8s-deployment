@@ -105,9 +105,7 @@ Always restart the worker, cron job and app deployment wherever cli and app imag
 
 # Todo
 
--   Research and know about best practices for storing k8s yaml config/manifests for different environments (staging, dev, prod) focusing on reusability.
+-   Use kustomize for replication of manifest across multiple envs.
 -   Scale out redis and mysql to more than one.
--   Research on multi nodes cluster.
--   Use helm chart for this.
 -   Install prometheus adapter so that now those custom metrics pulled in by prometheus can be understandable by kubernetes itself and autoscale based on those metrics.
 -   Flux CD
